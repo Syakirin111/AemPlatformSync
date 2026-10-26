@@ -108,13 +108,14 @@ SELECT * FROM dbo.Well;
 The following query returns the latest-updated well for each platform. Platforms without wells are also included.
 
 ```sql
+
+USE AemPlatformSyncDb;
+GO
+
 WITH RankedWells AS
 (
     SELECT
-        w.Id AS WellId,
-        w.PlatformId,
-        w.UniqueName AS WellName,
-        w.UpdatedAt,
+        w.*,
         ROW_NUMBER() OVER (
             PARTITION BY w.PlatformId
             ORDER BY w.UpdatedAt DESC, w.Id DESC
@@ -122,15 +123,18 @@ WITH RankedWells AS
     FROM dbo.Well AS w
 )
 SELECT
-    p.Id AS PlatformId,
     p.UniqueName AS PlatformName,
-    rw.WellId,
-    rw.WellName,
+    rw.Id,
+    rw.PlatformId,
+    rw.UniqueName,
+    rw.Latitude,
+    rw.Longitude,
+    rw.CreatedAt,
     rw.UpdatedAt
 FROM dbo.Platform AS p
-LEFT JOIN RankedWells AS rw
+INNER JOIN RankedWells AS rw
     ON rw.PlatformId = p.Id
-    AND rw.RowNum = 1
+WHERE rw.RowNum = 1
 ORDER BY p.Id;
 ```
 
